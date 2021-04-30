@@ -90,33 +90,36 @@ def check():
     text = flask.request.form["attempt"]
     jumble = flask.session["jumble"]
     matches = flask.session.get("matches", [])  # Default to empty list
-
     # Is it good?
     in_jumble = LetterBag(jumble).contains(text)
     matched = WORDS.has(text)
-
+    condition=""
     # Respond appropriately
     if matched and in_jumble and not (text in matches):
         # Cool, they found a new word
         matches.append(text)
         flask.session["matches"] = matches
+        #find_new_word=True
     elif text in matches:
-        flask.flash("You already found {}".format(text))
+        #find_new_word=False
+        condition="You already found {}".format(text)
     elif not matched:
-        flask.flash("{} isn't in the list of words".format(text))
+        condition="{} isn't in the list of words".format(text)
+        #find_new_word=False
     elif not in_jumble:
-        flask.flash(
-            '"{}" can\'t be made from the letters {}'.format(text, jumble))
+        condition='"{}" can\'t be made from the letters {}'.format(text, jumble)
+        #find_new_word=False
     else:
         app.logger.debug("This case shouldn't happen!")
         assert False  # Raises AssertionError
 
     # Choose page:  Solved enough, or keep going?
     if len(matches) >= flask.session["target_count"]:
-       return flask.redirect(flask.url_for("success"))
+      solve=True
     else:
-       return flask.redirect(flask.url_for("keep_going"))
-
+      solve=False
+    rslt={"condition":condition,"solve":solve,"matched":matched,"matches":matches,}
+    return flask.jsonify(result=rslt)
 
 ###############
 # AJAX request handlers

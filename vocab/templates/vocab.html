@@ -81,23 +81,62 @@
                </form>
             </div>
          </div>
-         <br />
+         
+	 <p id="response"> </p>
+	 <p id="message"> </p>
+	 <br />
+	 <script>
+            $("#entry").submit(function(event){
+               event.preventDefault();
+	    });
+            $("#attempt").keyup(function(event){
+	       var txt= $("#attempt").val();
+	       var keycode= event.which;
+	       var letter= String.fromCharCode(keycode);
+	       if(!"ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)){return}
+	       $.getJSON("/_check",{text:txt},
+                         function(data){
+		           var condition=data.result.condition;
+		           solve=data.result.solve;
+		           var matches=data.result.matches;
+		           matched=data.result.matched;
+			   if(solve){
+                               window.location.replace("/success");
+		           }
+			   if(matched){
+			       
+			       $("#attempt").val("");
+			       $("#response").html("You Found <br />");
+			       $("#message").html(matches);
+			   }
+	                   else{ 
+			       
+			       $("#response").html(condition);
+			       
+			   }    
+			    
+			   
+			 }
+                        );  
+	   });
+         </script>
+         <!--
          {% if session.matches|length is not equalto 0  %}
          <h2>You found </h2>
          <p id="results">
             {% for match in session.matches %}
             {{ match }}
             {% endfor %}
-         </p>
+	 </p>
          {% endif %}
          {% with messages = get_flashed_messages() %}
          {% if messages %}
-         <!-- Mismatch, already found, etc. "flashed" from Python -->
          {% for message in messages %}
          <p class="message">{{ message }}</p>
          {% endfor %}
          {% endif %}
-         {% endwith %}
+	 {% endwith %}-->
+	 
       </div>
       <!-- container -->
    </body>
