@@ -70,72 +70,72 @@
             <!-- col -->
          </div>
          <!-- row -->
-         <br />
+	 <br />
          <div class="row">
             <div class="col-xs-6 text-center">
-               <form id="entry" method="POST" action="/_check">
+		  <form id="entry" method="POST" action="/_check">
                   <label for="attempt">Word:</label>
                   <input id="attempt" name="attempt" type="text" width="15"
                      autocomplete="off"  autofocus />
-                  <input type="submit" name="try" />
+		  <!-- set to auto check, so delete submit bottum-->
                </form>
             </div>
-         </div>
-         
-	 <p id="response"> </p>
-	 <p id="message"> </p>
+         </div>  
 	 <br />
+	 <p id="found"> </p>
+	 <p id="response"> </p>
+	 <p id="condi"> </p>
 	 <script>
+            var matches=""
             $("#entry").submit(function(event){
                event.preventDefault();
 	    });
+            
             $("#attempt").keyup(function(event){
+	       
 	       var txt= $("#attempt").val();
 	       var keycode= event.which;
 	       var letter= String.fromCharCode(keycode);
 	       if(!"ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(letter)){return}
-	       $.getJSON("/_check",{text:txt},
+	       $.getJSON("/_check",{text: txt},
                          function(data){
-		           var condition=data.result.condition;
-		           solve=data.result.solve;
-		           var matches=data.result.matches;
-		           matched=data.result.matched;
+		         //get all content in result from flask_vocab.py
+		           found=data.result.found;//include string "You Found:"
+		           text=data.result.text;//include input letters
+                           condition=data.result.condition;//include currently letters condition(not made by given anagram,not in the list or already found)
+		           matched= data.result.matched;//include judgment of whether current letters match word in list
+	                   solve= data.result.solve;//tell us whether we already achieve target count of words
 			   if(solve){
+		           //if # of words we found == target_count,go to success.html page, else keep going
                                window.location.replace("/success");
 		           }
 			   if(matched){
-			       
-			       $("#attempt").val("");
-			       $("#response").html("You Found <br />");
-			       $("#message").html(matches);
+		           //if match a word on list
+			       if(condition==""){
+			       //and also does meet 3 of above condition, clean attempt field,renew matches and shows it
+			           matches=matches+" "+text;//renew matches
+			           $("#attempt").val("");//clean attempt
+				   $("#found").text(found);//shows"You Found:"
+			           $("#response").text(matches);//shows list of words that we already found
+			       }
+			       else{
+			       //else, also shows currently found list,and condition warning
+				   $("#found").html(found);//shows"You Found:"
+				   $("#response").text(matches);//shows found list
+                                   $("#condi").text(condition);//shows condition
+			       }
 			   }
 	                   else{ 
-			       
-			       $("#response").html(condition);
-			       
-			   }    
-			    
-			   
+		           //similar to above 'else', but it is because of un-matched
+			       $("#found").text(found);
+			       $("#response").text(matches);
+			       $("#condi").text(condition);
+			   }    		   
 			 }
                         );  
-	   });
-         </script>
-         <!--
-         {% if session.matches|length is not equalto 0  %}
-         <h2>You found </h2>
-         <p id="results">
-            {% for match in session.matches %}
-            {{ match }}
-            {% endfor %}
-	 </p>
-         {% endif %}
-         {% with messages = get_flashed_messages() %}
-         {% if messages %}
-         {% for message in messages %}
-         <p class="message">{{ message }}</p>
-         {% endfor %}
-         {% endif %}
-	 {% endwith %}-->
+	    });
+	 </script>
+
 	 
       </div>
       <!-- container -->

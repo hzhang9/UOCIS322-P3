@@ -6,6 +6,7 @@ from a scrambled string)
 
 import flask
 import logging
+from flask import request
 
 # Our modules
 from src.letterbag import LetterBag
@@ -53,16 +54,6 @@ def index():
     return flask.render_template('vocab.html')
 
 
-@app.route("/keep_going")
-def keep_going():
-    """
-    After initial use of index, we keep the same scrambled
-    word and try to get more matches
-    """
-    flask.g.vocab = WORDS.as_list()
-    return flask.render_template('vocab.html')
-
-
 @app.route("/success")
 def success():
     return flask.render_template('success.html')
@@ -74,7 +65,7 @@ def success():
 #   a JSON request handler
 #######################
 
-@app.route("/_check", methods=["POST"])
+@app.route("/_check")
 def check():
     """
     User has submitted the form with a word ('attempt')
@@ -85,9 +76,8 @@ def check():
     already found.
     """
     app.logger.debug("Entering check")
-
+    text=request.args.get("text",type=str)
     # The data we need, from form and from cookie
-    text = flask.request.form["attempt"]
     jumble = flask.session["jumble"]
     matches = flask.session.get("matches", [])  # Default to empty list
     # Is it good?
@@ -99,27 +89,24 @@ def check():
         # Cool, they found a new word
         matches.append(text)
         flask.session["matches"] = matches
-        #find_new_word=True
     elif text in matches:
-        #find_new_word=False
-        condition="You already found {}".format(text)
+        condition="You already found {}".format(text)#record warning notes into condition
     elif not matched:
-        condition="{} isn't in the list of words".format(text)
-        #find_new_word=False
+        condition="{} isn't in the list of words".format(text)#also
     elif not in_jumble:
-        condition='"{}" can\'t be made from the letters {}'.format(text, jumble)
-        #find_new_word=False
+        condition='"{}" can\'t be made from the letters {}'.format(text, jumble)#also        
     else:
         app.logger.debug("This case shouldn't happen!")
         assert False  # Raises AssertionError
-
     # Choose page:  Solved enough, or keep going?
     if len(matches) >= flask.session["target_count"]:
+    #save the result of whether solved into solve
       solve=True
     else:
       solve=False
-    rslt={"condition":condition,"solve":solve,"matched":matched,"matches":matches,}
-    return flask.jsonify(result=rslt)
+    #rslt save all information needed in JSON,including text,codition,solve,matched and found(this is because avoid use string on .html)
+    rslt={"text":text,"found":"You Found:","condition":condition,"solve":solve,"matched":matched}
+    return flask.jsonify(result=rslt)#and call .jsonify, transmiss into vocab.html
 
 ###############
 # AJAX request handlers
